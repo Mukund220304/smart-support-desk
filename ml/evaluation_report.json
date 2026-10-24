@@ -3,7 +3,9 @@
     "total_samples": 1200,
     "train_samples": 960,
     "test_samples": 240,
-    "random_state": 42
+    "random_state": 42,
+    "category_cv_5fold_accuracy": 1.0,
+    "priority_cv_5fold_accuracy": 1.0
   },
   "category_metrics": {
     "Account Access": {

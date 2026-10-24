@@ -22,7 +22,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold
 from sklearn.pipeline import Pipeline
 
 RANDOM_STATE = 42
@@ -91,16 +91,20 @@ def train_and_evaluate():
     check_data_leakage(train_df['text'].tolist(), test_df['text'].tolist())
 
     # ── 1. Category Model Pipeline ───────────────────────────────────────────
-    print("\nTraining Category Classifier (TF-IDF + LogisticRegression)...")
+    print("\nTraining Enhanced Category Classifier (TF-IDF [1-3 ngrams] + LogisticRegression)...")
     category_pipeline = Pipeline([
         ('tfidf', TfidfVectorizer(
-            ngram_range=(1, 2),
-            max_features=5000,
-            sublinear_tf=True
+            ngram_range=(1, 3),
+            max_features=10000,
+            sublinear_tf=True,
+            strip_accents='unicode',
+            lowercase=True
         )),
         ('clf', LogisticRegression(
-            max_iter=1000,
-            C=1.0,
+            max_iter=2000,
+            C=2.5,
+            class_weight='balanced',
+            solver='lbfgs',
             random_state=RANDOM_STATE
         )),
     ])
@@ -109,20 +113,30 @@ def train_and_evaluate():
     cat_preds = category_pipeline.predict(test_df['text'])
     cat_report = classification_report(test_df['category'], cat_preds, output_dict=True)
 
-    print("\n=== Category Classification Report ===")
+    print("\n=== Category Classification Report (Holdout Test Set) ===")
     print(classification_report(test_df['category'], cat_preds, digits=4))
+    # 5-fold Cross-Validation on Category model
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
+    cat_cv_scores = cross_val_score(category_pipeline, df['text'], df['category'], cv=cv, scoring='accuracy')
+    cat_cv_mean = float(cat_cv_scores.mean())
+    cat_cv_std = float(cat_cv_scores.std())
+    print(f"Category 5-Fold Cross-Validation Accuracy: {cat_cv_mean:.4f} (+/- {cat_cv_std:.4f})")
 
     # ── 2. Priority Model Pipeline ───────────────────────────────────────────
-    print("\nTraining Priority Classifier (TF-IDF + LogisticRegression)...")
+    print("\nTraining Enhanced Priority Classifier (TF-IDF [1-3 ngrams] + LogisticRegression)...")
     priority_pipeline = Pipeline([
         ('tfidf', TfidfVectorizer(
-            ngram_range=(1, 2),
-            max_features=5000,
-            sublinear_tf=True
+            ngram_range=(1, 3),
+            max_features=10000,
+            sublinear_tf=True,
+            strip_accents='unicode',
+            lowercase=True
         )),
         ('clf', LogisticRegression(
-            max_iter=1000,
-            C=1.0,
+            max_iter=2000,
+            C=2.5,
+            class_weight='balanced',
+            solver='lbfgs',
             random_state=RANDOM_STATE
         )),
     ])
@@ -131,8 +145,14 @@ def train_and_evaluate():
     pri_preds = priority_pipeline.predict(test_df['text'])
     pri_report = classification_report(test_df['priority'], pri_preds, output_dict=True)
 
-    print("\n=== Priority Classification Report ===")
+    print("\n=== Priority Classification Report (Holdout Test Set) ===")
     print(classification_report(test_df['priority'], pri_preds, digits=4))
+
+    # 5-fold Cross-Validation on Priority model
+    pri_cv_scores = cross_val_score(priority_pipeline, df['text'], df['priority'], cv=cv, scoring='accuracy')
+    pri_cv_mean = float(pri_cv_scores.mean())
+    pri_cv_std = float(pri_cv_scores.std())
+    print(f"Priority 5-Fold Cross-Validation Accuracy: {pri_cv_mean:.4f} (+/- {pri_cv_std:.4f})")
 
     # ── 3. Save Model Artifacts ──────────────────────────────────────────────
     cat_model_path = os.path.join(models_dir, 'category_model.joblib')
@@ -150,6 +170,8 @@ def train_and_evaluate():
             'train_samples': len(train_df),
             'test_samples': len(test_df),
             'random_state': RANDOM_STATE,
+            'category_cv_5fold_accuracy': round(cat_cv_mean, 4),
+            'priority_cv_5fold_accuracy': round(pri_cv_mean, 4),
         },
         'category_metrics': cat_report,
         'priority_metrics': pri_report,
