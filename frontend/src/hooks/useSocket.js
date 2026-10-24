@@ -13,9 +13,11 @@ export default function useSocket(onEvent) {
 
   useEffect(() => {
     // In dev, connect to backend URL or current origin
-    const socketUrl = window.location.port === '5173'
-      ? 'http://localhost:3001'
-      : window.location.origin;
+    const socketUrl = import.meta.env.VITE_SOCKET_URL ||
+      import.meta.env.VITE_BACKEND_URL ||
+      (window.location.port === '5173' || window.location.port === '5174'
+        ? 'http://localhost:3001'
+        : window.location.origin);
 
     const socket = io(socketUrl, {
       transports: ['websocket', 'polling'],

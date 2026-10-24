@@ -26,8 +26,21 @@ initSocket(server);
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(express.json());
 
+const corsOriginHandler = (origin, callback) => {
+  // Allow requests with no origin (like mobile apps, curl, server-to-server)
+  if (!origin) return callback(null, true);
+  if (
+    origin.endsWith('.netlify.app') ||
+    origin.includes('localhost') ||
+    origin === process.env.FRONTEND_URL
+  ) {
+    return callback(null, true);
+  }
+  return callback(null, true); // Permissive fallback for preview deployments
+};
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: corsOriginHandler,
   credentials: true,
 }));
 

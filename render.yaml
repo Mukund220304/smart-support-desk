@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: smart-support-desk-ml
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: ml
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -w 2 -b 0.0.0.0:$PORT predict_service:app
+    healthCheckPath: /health
+
+  - type: web
+    name: smart-support-desk-backend
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node src/server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: ML_SERVICE_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
