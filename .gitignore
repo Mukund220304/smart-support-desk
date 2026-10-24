@@ -1,0 +1,49 @@
+# Node dependencies & logs
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment secrets — strictly NEVER commit real .env files
+.env
+.env.*
+*.env
+backend/.env
+frontend/.env
+ml/.env
+!.env.example
+!backend/.env.example
+
+# SQLite & databases
+*.sqlite
+*.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# ML models — keep the two serialized joblib models for Render microservice, ignore others
+ml/models/*.pkl
+!ml/models/category_model.joblib
+!ml/models/priority_model.joblib
+
+# OS metadata
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Build output
+frontend/dist/
+dist/
+build/
+
