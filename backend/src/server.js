@@ -45,17 +45,21 @@ app.use(cors({
 }));
 
 // ── Routes ────────────────────────────────────────────────────────────────────
-app.get('/api/health', (req, res) => {
+const healthHandler = (req, res) => {
   res.json({ status: 'ok', message: 'Smart Support Desk API is running' });
-});
+};
+app.get('/api/health', healthHandler);
+app.get('/health', healthHandler);
 
-// Ticket CRUD + /predict proxy (added in Stage 2 & 8)
+// Ticket CRUD + /predict proxy mounted on both /api and root /
 const ticketRoutes = require('./routes/tickets');
 app.use('/api', ticketRoutes);
+app.use('/', ticketRoutes);
 
-// Dashboard stats aggregation (added in Stage 4)
+// Dashboard stats aggregation mounted on both /api and root /
 const dashboardRoutes = require('./routes/dashboard');
 app.use('/api', dashboardRoutes);
+app.use('/', dashboardRoutes);
 
 // ── 404 handler ───────────────────────────────────────────────────────────────
 app.use((req, res) => {
